@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>원고 중복 검토</title>
+  </head>
+  <body>
+    <h1>원고 중복 검토기</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" name="files" multiple accept=".txt" />
+      <input type="text" name="exclude" placeholder="제외 문구 (쉼표 구분)" />
+      <button type="submit">업로드</button>
+    </form>
+    <div id="result"></div>
+    <script>
+      document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const rows = await response.json();
+        const table = renderTableHTML(rows);
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '';
+        resultDiv.appendChild(table);
+      });
+
+      // 테이블 렌더링 함수
+      function renderTableHTML(rows) {
+        const table = document.createElement('table');
+        table.border = '1';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '20px';
+
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+
+        ['파일 이름', '중복 문장', '중복 위치'].forEach(text => {
+          const th = document.createElement('th');
+          th.innerText = text;
+          th.style.padding = '8px';
+          headRow.appendChild(th);
+        });
+
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+
+        rows.forEach(({ file, sentence, duplicates }) => {
+          const row = document.createElement('tr');
+
+          [file, sentence, duplicates].forEach(text => {
+            const td = document.createElement('td');
+            td.innerText = text;
+            td.style.padding = '8px';
+            row.appendChild(td);
+          });
+
+          tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        return table;
+      }
+    </script>
+  </body>
+</html>
