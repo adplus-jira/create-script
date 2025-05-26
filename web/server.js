@@ -3,8 +3,15 @@ const multer = require('multer');
 const cors = require('cors');
 const app = express();
 const port = 3012;
+const iconv = require('iconv-lite');
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    file.originalname = iconv.decode(Buffer.from(file.originalname, 'binary'), 'utf-8');
+    cb(null, true);
+  },
+});
 
 app.use(cors());
 app.use(express.static('public'));
@@ -55,7 +62,7 @@ app.post('/upload', upload.array('files'), (req, res) => {
       .split('\n')
       .map(line => line.trim())
       .filter(line => !shouldExclude(line, excludeList));
-  
+
     return {
       name: file.originalname,
       lines,
@@ -106,7 +113,7 @@ function checkDuplicates(filesArray) {
 
   // 각 문장별로 등장한 파일명을 저장
   filesArray.forEach(({ name, lines }) => {
-    lines.forEach((line) => {
+    lines.forEach(line => {
       if (!sentenceMap.has(line)) {
         sentenceMap.set(line, new Set());
       }
@@ -118,18 +125,16 @@ function checkDuplicates(filesArray) {
     if (fileSet.size <= 1) continue; // 2개 이상의 파일에서만 중복
 
     const sortedFiles = Array.from(fileSet).sort();
-    const [first, ...duplicates] = sortedFiles;
+    // const [...duplicates] = sortedFiles;
 
     rows.push({
       sentence: line.replace(/\s+/g, ' ').trim(),
-      duplicates: duplicates.join(', '), // 중복 파일 목록만 표시
+      duplicates: sortedFiles.join(', '), // 중복 파일 목록만 표시
     });
   }
 
   return rows;
 }
-
-
 
 app.listen(port, () => {
   console.log(`서버 실행 중: http://localhost:${port}`);
