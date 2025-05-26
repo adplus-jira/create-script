@@ -11,7 +11,7 @@
       <input type="text" name="exclude" placeholder="제외 문구 (쉼표 구분)" />
       <button type="submit">업로드</button>
     </form>
-    <div id="result" style="max-width: 1000px; margin: auto; width: 100%;"></div>
+    <div id="result"></div>
     <script>
       document.getElementById('uploadForm').addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -42,7 +42,7 @@
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
 
-        ['순서', '중복 문장', '중복 위치'].forEach(text => {
+        ['파일 이름', '중복 문장', '중복 위치'].forEach(text => {
           const th = document.createElement('th');
           th.innerText = text;
           th.style.padding = '8px';
@@ -53,17 +53,16 @@
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
-        let index = 1;
-        rows.forEach(({ sentence, duplicates }) => {
+
+        rows.forEach(({ file, sentence, duplicates }) => {
           const row = document.createElement('tr');
 
-          [index, sentence, duplicates].forEach(text => {
+          [file, sentence, duplicates].forEach(text => {
             const td = document.createElement('td');
             td.innerText = text;
             td.style.padding = '8px';
             row.appendChild(td);
           });
-          index++;
 
           tbody.appendChild(row);
         });
