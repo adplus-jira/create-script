@@ -25,8 +25,8 @@ function MainPage({ getMessage }) {
     const resultDiv = document.getElementById('result');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
-    link.download = `response_${top_p}.txt`;
-    link.textContent = '원고 다운로드_' + top_p;
+    link.download = `response_${top_p}_${top_k}.txt`;
+    link.textContent = '원고 다운로드_' + top_p + '_' + top_k;
     resultDiv.appendChild(link);
 
   };
@@ -43,9 +43,10 @@ function MainPage({ getMessage }) {
       <input type='text' name="top_p" placeholder="top_p (0.0 ~ 1.0)" className='border-2 border-gray-300 p-2 rounded-md w-full mb-4' />
       {/* <input type='text' name="temperature" placeholder="temperature (0.0 ~ 1.0)" className='border-2 border-gray-300 p-2 rounded-md w-full mb-4' /> */}
       <input type='text' name="top_k" placeholder="top_k (0 ~ 100)" className='border-2 border-gray-300 p-2 rounded-md w-full mb-4' />
+      <p className='text-gray-500'>0.85~0.95 / 65정도가 잘 나오는 듯</p>
       <button type='submit' className='bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 cursor-pointer w-[200px] float-right'>Submit</button>
     </form>
-    <div id='result' className='flex flex-col gap-4'></div>
+    <div id='result' className='flex flex-col gap-4 mt-20 py-10 border-t-2 border-dotted'></div>
     </>
   )
 }
