@@ -5,7 +5,7 @@ import { SYSTEM_PROMPT, getUserPrompt } from './lib/prompts';
 import * as constants from './lib/constants';
 
 export default function Home() {
-  const getMessage = async ({ temperature, top_p, top_k }) => {
+  const getMessage = async ({ temperature, top_p, top_k, count }) => {
     'use server';
     try {
       // 화자 설정
