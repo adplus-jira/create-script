@@ -11,20 +11,15 @@ export default function Home() {
     'use server';
     try {
       // 화자 설정
-      const character = generateCharacter();
-      const characterString = getCharacterString(character);
-
-      // 접근 방식 선택
-      const approach = constants.APPROACHES[Math.floor(Math.random() * constants.APPROACHES.length)];
+      // const character = generateCharacter();
+      // const characterString = getCharacterString(character);
 
       // 서브 키워드
       const subKeyword = constants.SUB_KEYWORDS[Math.floor(Math.random() * constants.SUB_KEYWORDS.length)];
 
       // 핵심 내용 변환
       const transformedContent = await transformKeyContent(
-        constants.KEY_CONTENT,
-        characterString,
-        approach
+        constants.KEY_CONTENT
       );
       
       // 사용자 메세지 생성
@@ -36,13 +31,9 @@ export default function Home() {
         minLength: constants.MIN_LENGTH,
         imageCount: constants.IMAGE_COUNT,
         contentType: constants.CONTENT_TYPE,
-        character: characterString,
-        approach,
         transformedContent,
         additionalRequirements: constants.ADDITIONAL_REQUIREMENTS,
       });
-
-      // console.log('User Message:', userMsg);
 
       const ai = new GoogleGenAI({
         apiKey: process.env.GEMINI_API_KEY,
