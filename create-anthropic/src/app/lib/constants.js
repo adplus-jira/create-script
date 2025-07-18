@@ -1,14 +1,14 @@
-export const MAIN_KEYWORD = '삼겹살 프랜차이즈 창업';
+export const MAIN_KEYWORD = '중년 창업 추천';
 export const MARKET_NAME = '담가화로구이';
 export const KEYWORD_COUNT = 8;
 export const MIN_LENGTH = 2000;
-export const IMAGE_COUNT = 21;
+export const IMAGE_COUNT = 20;
 export const CONTENT_TYPE = '정보성 원고';
 
 export const SUB_KEYWORDS = [
   '가격', '추천', '비용', '종류', '설명회', '정보', '성공사례',
   '아이템', '업종', '순위', '준비', '컨설팅', '업체', '브랜드',
-  '프랜차이즈', '프렌차이즈', '식당',
+  '프랜차이즈'
 ];
 
 export const APPROACHES = [

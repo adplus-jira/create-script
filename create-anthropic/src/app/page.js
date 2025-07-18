@@ -3,6 +3,8 @@ import { generateCharacter, getCharacterString } from './lib/character';
 import { transformKeyContent, generateMainContent } from './lib/content-transformer';
 import { SYSTEM_PROMPT, getUserPrompt } from './lib/prompts';
 import * as constants from './lib/constants';
+import { GoogleGenAI } from '@google/genai';
+// import { SYSTEM_PROMPT } from './lib/gemini';
 
 export default function Home() {
   const getMessage = async ({ temperature, top_p, top_k, count }) => {
@@ -40,16 +42,49 @@ export default function Home() {
         additionalRequirements: constants.ADDITIONAL_REQUIREMENTS,
       });
 
-      // 원고 제작
-      const content = await generateMainContent({
-        system: SYSTEM_PROMPT,
-        model: 'claude-sonnet-4-20250514',
-        userMsg,
-        top_p,
-        top_k,
+      // console.log('User Message:', userMsg);
+
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
       });
 
-      return { content, status: 'success' };
+      // const result = await ai.models.generateContent({
+      //   model: 'gemini-2.5-pro',
+      //   config: {
+      //     systemInstruction: SYSTEM_PROMPT,
+      //     temperature: 1.4,
+      //     // thinkingConfig: {
+      //     //   thinkingBudget: 3000,
+      //     // }
+      //   },
+      //   contents: '원고 제작 부탁드립니다',
+      // });
+
+      const result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          temperature: 1.2,
+          thinkingConfig: {
+            thinkingBudget: 1000,
+          }
+        },
+        contents: userMsg
+      });
+
+      const response = result.text?.trim() || result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+      // 원고 제작(claude)
+      // const content = await generateMainContent({
+      //   system: SYSTEM_PROMPT,
+      //   model: 'claude-sonnet-4-20250514',
+      //   userMsg,
+      //   top_p,
+      //   top_k,
+      // });
+
+      // return { content, status: 'success' };
+      return { content: response, status: 'success' };
     } catch (error) {
       console.error('Error:', error);
       return { content: error.message, status: 'error' };
