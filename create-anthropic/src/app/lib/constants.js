@@ -1,4 +1,3 @@
-export const MAIN_KEYWORD = '중년 창업 추천';
 export const MARKET_NAME = '담가화로구이';
 export const KEYWORD_COUNT = 8;
 export const MIN_LENGTH = 2000;
@@ -35,8 +34,8 @@ export const KEY_CONTENT = `
 - 윤양효 회장 직접 세미나 진행
   : 1990년대 대패 삼겹살 유행 주도
   : 와인 숙성 삼겹살 프랜차이즈 성공
-  : ‘그램그램’ 덤 마케팅 경영자
-  : 4번째 브랜드 ‘담가화로구이’ 오픈
+  : 그램그램 덤 마케팅 경영자
+  : 4번째 브랜드 담가화로구이 오픈
 - 창업 세미나 참가 시 매출/수익 구조 100% 공개
 - 창업 모집 1년 만에 150호점 이상 계약
 - 매주 목요일 오후 2시 본사에서 창업 세미나 진행

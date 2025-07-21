@@ -14,9 +14,9 @@ export const transformKeyContent = async (
       config: {
         systemInstruction: TRANSFORM_SYSTEM_PROMPT,
         temperature: 1,
-        thinkingConfig: {
-          thinkingBudget: 1000,
-        },
+        // thinkingConfig: {
+        //   thinkingBudget: 1000,
+        // },
       },
       contents: originalContent,
     });
