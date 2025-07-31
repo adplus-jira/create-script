@@ -1,8 +1,8 @@
 export const MARKET_NAME = '담가화로구이';
 export const KEYWORD_COUNT = 8;
-export const MIN_LENGTH = 2000;
+export const MIN_LENGTH = 3000;
 export const IMAGE_COUNT = 20;
-export const CONTENT_TYPE = '정보성 원고';
+export const CONTENT_TYPE = '정보전달 및 후기성 원고';
 
 export const SUB_KEYWORDS = [
   '가격', '추천', '비용', '종류', '설명회', '정보', '성공사례',

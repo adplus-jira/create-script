@@ -1,7 +1,7 @@
 import { MainPage } from './component/main-page';
 import { generateCharacter, getCharacterString } from './lib/character';
 import { transformKeyContent, generateMainContent } from './lib/content-transformer';
-import { SYSTEM_PROMPT, getUserPrompt } from './lib/prompts';
+import { NEXT_USER_PROMPT, SYSTEM_PROMPT, getUserPrompt } from './lib/prompts';
 import * as constants from './lib/constants';
 import { GoogleGenAI } from '@google/genai';
 import { initChatSession, sendChatMessage } from './lib/chat-session';
@@ -76,7 +76,7 @@ import { initChatSession, sendChatMessage } from './lib/chat-session';
 
 export default function Home() {
 
-  const getMessage = async ({ type, keyword }) => {
+  const getMessage = async ({ type, keyword, message }) => {
     'use server';
 
     try {
@@ -87,7 +87,7 @@ export default function Home() {
 
         const prompt = getUserPrompt({
           mainKeyword: keyword,
-          subKeyword: constants.SUB_KEYWORDS[Math.floor(Math.random() * constants.SUB_KEYWORDS.length)],
+          // subKeyword: constants.SUB_KEYWORDS[Math.floor(Math.random() * constants.SUB_KEYWORDS.length)],
           marketName: constants.MARKET_NAME,
           keywordCount: constants.KEYWORD_COUNT,
           minLength: constants.MIN_LENGTH,
@@ -100,9 +100,10 @@ export default function Home() {
         const response = await sendChatMessage(prompt);
         return { content: response, status: 'success' };
       }
-
+      // 이전과는 내용이 겹치지 않게, 유사원고처럼 보이지 않게 이전 지시사항을 참고해서 다음 원고를 작성하되, 문단 순서를 변경하고 그에 따라 내용도 바꿔서 작성해주세요.
       if (type === 'next') {
-        const nextPrompt = "이전과는 내용이 겹치지 않게, 유사원고처럼 보이지 않게 이전 지시사항을 참고해서 다음 원고를 작성해주세요.";
+        console.log('Next message:', message);
+        const nextPrompt = message || NEXT_USER_PROMPT;
         const response = await sendChatMessage(nextPrompt);
         return { content: response, status: 'success' };
       }

@@ -78,11 +78,12 @@ export const MainPage = ({ getMessage }) => {
   const [loading, setLoading] = React.useState(false);
   const [result, setResult] = React.useState([]);
   const keywordInput = React.useRef(null);
+  const messageInput = React.useRef(null);
   const [resultNumber, setResultNumber] = React.useState(0);
 
   const handleClick = async (type) => {
     setLoading(true);
-    const res = await getMessage({ type, keyword: keywordInput.current.value });
+    const res = await getMessage({ type, keyword: keywordInput.current.value, message: messageInput.current.value });
     if (res.status === 'error') {
       alert('Error: ' + res.content);
       setLoading(false);
@@ -113,12 +114,19 @@ export const MainPage = ({ getMessage }) => {
           <div className="text-white">Loading...</div>
         </div>
       )}
-      <div className="p-10 flex gap-4">
+      <div className="p-10 flex gap-2">
         <input
           type="text"
           id="keyword"
           placeholder="키워드"
           ref={keywordInput}
+          className="border-2 border-gray-300 p-2 rounded-md w-full max-w-[400px]"
+        />
+        <input
+          type="text"
+          id="message"
+          placeholder="메시지 (선택)"
+          ref={messageInput}
           className="border-2 border-gray-300 p-2 rounded-md w-full max-w-[400px]"
         />
         <button
