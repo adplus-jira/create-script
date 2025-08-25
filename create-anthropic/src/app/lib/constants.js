@@ -1,6 +1,6 @@
 export const MARKET_NAME = '담가화로구이';
 export const KEYWORD_COUNT = 8;
-export const MIN_LENGTH = 3000;
+export const MIN_LENGTH = 2400;
 export const IMAGE_COUNT = 20;
 export const CONTENT_TYPE = '정보전달 및 후기성 원고';
 
@@ -60,9 +60,7 @@ export const KEY_CONTENT = `
 `;
 
 export const ADDITIONAL_REQUIREMENTS = `
-창업 문의 네이버 폼 url 링크 삽입 필수 !
-
 https://naver.me/Gn0RaYTQ
 
-네이버 톡톡 상담 링크 : talk.naver.com/W5G0S8I
+talk.naver.com/W5G0S8I
 `;
