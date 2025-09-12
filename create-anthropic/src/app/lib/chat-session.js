@@ -3,7 +3,7 @@ import { SYSTEM_PROMPT } from "./prompts";
 
 let chat = null;
 
-export const initChatSession = async () => {
+export const initChatSession = async (systemPrompt) => {
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
   });
@@ -11,10 +11,10 @@ export const initChatSession = async () => {
   chat = ai.chats.create({
     model: "gemini-2.5-flash",
     config: {
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: systemPrompt || SYSTEM_PROMPT,
       temperature: 1.5,
       thinkingConfig: {
-        thinkingBudget: 2000,
+        thinkingBudget: 4000,
       },
     },
   });
