@@ -12,10 +12,7 @@ export const initChatSession = async (systemPrompt) => {
     model: "gemini-2.5-flash",
     config: {
       systemInstruction: systemPrompt || SYSTEM_PROMPT,
-      temperature: 1.5,
-      thinkingConfig: {
-        thinkingBudget: 4000,
-      },
+      temperature: 1,
     },
   });
 
