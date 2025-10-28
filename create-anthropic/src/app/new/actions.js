@@ -73,8 +73,12 @@ ${previousLines.slice(0, 50).join('\n')}
   // 한 번의 API 호출로 원고 생성 및 검토
   const response = await sendChatMessage(combinedPrompt);
   
-  // 특수문자 제거
-  return response.replace(/['"`**'']/g, '');
+  // 특수문자 제거 및 줄바꿈 표시 메타데이터 제거
+  let cleaned = response.replace(/['"`**'']/g, '');
+  // " <- (...)" 형태의 줄바꿈 메타데이터 제거
+  cleaned = cleaned.replace(/<-\s*\([^)]*\)/g, '');
+  
+  return cleaned;
 }
 
 // 원고 생성 (하나씩)
