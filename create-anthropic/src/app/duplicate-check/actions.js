@@ -127,25 +127,32 @@ function parseReplacementsFromResponse(response) {
     console.log('[파싱] Gemini 응답에서 대체 문장을 찾을 수 없음');
     console.log('[파싱] 응답 내용:', response.substring(0, 500));
   }
+
+  console.log("대체문장 배열 : ", replacements)
   
   return replacements;
 }
 
 // 파일에 문장 교체 적용
 function applyReplacements(files, duplicates, replacements) {
-  // 각 중복 문장별로 어떤 파일에서 몇 번째로 나타나는지 추적
+  // 각 중복 문장별로 전체적으로 몇 번째로 나타나는지 추적
+  const globalOccurrenceCounters = new Map();
+  
+  // 모든 중복 문장에 대해 각 문장이 전체에서 몇 번째로 나타나는지 카운트할 Map 생성
   const sentenceOccurrences = new Map();
   duplicates.forEach(dup => {
     const occurrences = dup.files.map(f => ({
       fileIndex: f.fileIndex,
       sentenceIndex: f.sentenceIndex
     }));
-    // 파일 인덱스로 정렬하여 첫 번째 파일이 무엇인지 확인
     occurrences.sort((a, b) => a.fileIndex - b.fileIndex);
     sentenceOccurrences.set(dup.sentence, {
       firstFileIndex: occurrences[0]?.fileIndex,
+      totalOccurrences: occurrences.length,
       allOccurrences: occurrences
     });
+    // 전역 카운터 초기화
+    globalOccurrenceCounters.set(dup.sentence, 0);
   });
 
   return files.map((file, fileIndex) => {
@@ -167,23 +174,14 @@ function applyReplacements(files, duplicates, replacements) {
           const occInfo = sentenceOccurrences.get(dup.sentence);
           // 이 파일이 첫 번째 발생 파일인지 확인
           const isFirstFile = occInfo?.firstFileIndex === fileIndex;
-          // 이 파일에서 이 문장이 몇 번째인지 확인
-          const occurrenceInThisFile = occInfo?.allOccurrences.filter(o => o.fileIndex === fileIndex) || [];
           
           fileReplacements.push({
             original: dup.sentence,
             alternatives: replacement.alternatives,
-            isFirstFile: isFirstFile,
-            occurrenceInFile: occurrenceInThisFile.length
+            isFirstFile: isFirstFile
           });
         }
       }
-    });
-
-    // 각 중복 문장별로 이 파일 내에서 몇 번째 나타나는지 카운터
-    const replacementCounters = new Map();
-    fileReplacements.forEach(repl => {
-      replacementCounters.set(repl.original, 0);
     });
 
     let modifiedContent = '';
@@ -200,34 +198,37 @@ function applyReplacements(files, duplicates, replacements) {
       let replaced = false;
       for (const repl of fileReplacements) {
         if (trimmedLine === repl.original) {
-          const counter = replacementCounters.get(repl.original);
-          replacementCounters.set(repl.original, counter + 1);
+          // 전역 카운터 가져오기
+          const globalCounter = globalOccurrenceCounters.get(repl.original);
+          // 전역 카운터 증가 (다음 발생을 위해)
+          globalOccurrenceCounters.set(repl.original, globalCounter + 1);
           
           // 첫 번째 파일의 첫 번째 발생만 원본 유지
-          const isFirstOccurrence = repl.isFirstFile && counter === 0;
+          const isFirstOccurrence = repl.isFirstFile && globalCounter === 0;
           
           if (isFirstOccurrence) {
             // 원본 유지 (첫 번째 파일의 첫 번째 발생만)
             modifiedContent += line + '\n';
+            console.log(`[원본유지] 파일 ${fileIndex + 1}, 문장: ${trimmedLine.substring(0, 30)}..., globalCounter: ${globalCounter}`);
           } else {
             // 그 외는 모두 대체 문장 사용
             if (repl.alternatives.length > 0) {
               // 대체 문장 인덱스 계산
-              // 첫 번째 파일의 두 번째 이상: counter-1 사용 (첫 번째 제외)
-              // 다른 파일: 0부터 시작
-              let altIndex;
-              if (repl.isFirstFile) {
-                altIndex = Math.max(0, counter - 1); // 첫 번째 파일의 경우 첫 번째는 제외
-              } else {
-                altIndex = counter; // 다른 파일의 경우 0부터 시작
+              // 전역 카운터 기준으로 계산 (첫 번째 파일의 첫 번째는 제외)
+              const altIndex = globalCounter - 1;
+              const chosenAlt = repl.alternatives[altIndex % repl.alternatives.length];
+              
+              // chosenAlt가 undefined이거나 altIndex가 음수인 경우 안전하게 처리
+              if (!chosenAlt || altIndex < 0) {
+                console.error(`[오류] 대체 문장이 없습니다. altIndex: ${altIndex}, globalCounter: ${globalCounter}, alternatives.length: ${repl.alternatives.length}`);
+                modifiedContent += line + '\n';
+                replaced = true;
+                break;
               }
 
-              const chosenAlt = repl.alternatives[altIndex % repl.alternatives.length];
-
               const spacing = line.match(/^(\s*)/)[1] || '';
-              const finalIndex = altIndex % repl.alternatives.length;
               
-              console.log(`[교체] 파일 ${fileIndex + 1}, 문장: ${trimmedLine.substring(0, 30)}..., isFirstFile: ${repl.isFirstFile}, counter: ${counter}, altIndex: ${altIndex}, finalIndex: ${finalIndex}`);
+              console.log(`[교체] 파일 ${fileIndex + 1}, 문장: ${trimmedLine.substring(0, 30)}..., isFirstFile: ${repl.isFirstFile}, globalCounter: ${globalCounter}, altIndex: ${altIndex}, 대체: ${chosenAlt.substring(0, Math.min(chosenAlt.length, 30))}`);
               
               modifiedContent += spacing + chosenAlt + '\n';
             } else {
@@ -347,6 +348,7 @@ export async function applyTransforms({ files, excludeStrings = [] }) {
 
     const responseText = response.text;
     console.log('[중복 검사] Gemini 응답 수신 완료');
+    console.log(responseText);
 
     // 3. 응답에서 대체 문장 추출
     const replacements = parseReplacementsFromResponse(responseText);

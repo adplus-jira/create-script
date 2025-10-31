@@ -136,6 +136,6 @@ function checkDuplicates(filesArray) {
   return rows;
 }
 
-app.listen(port, () => {
-  console.log(`서버 실행 중: http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`서버 실행 중: http://0.0.0.0:${port}`);
 });
