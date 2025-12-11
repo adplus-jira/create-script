@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { IMAGE_COUNT } from '../../lib/constants';
 
 export const ImprovedPage = ({ generateManuscript }) => {
   const [loading, setLoading] = React.useState(false);
@@ -9,6 +10,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
   
   const keywordInput = React.useRef(null);
   const feedbackInput = React.useRef(null);
+  const imageCountInput = React.useRef(null);
 
   const handleStart = async () => {
     if (!keywordInput.current.value) {
@@ -19,10 +21,15 @@ export const ImprovedPage = ({ generateManuscript }) => {
     setLoading(true);
     setCopySuccess('');
     
+    const imageCount = imageCountInput.current.value 
+      ? parseInt(imageCountInput.current.value) 
+      : IMAGE_COUNT;
+    
     try {
       const result = await generateManuscript({
         type: 'init',
         keyword: keywordInput.current.value,
+        imageCount: imageCount,
         previousManuscripts: manuscripts
       });
       
@@ -49,10 +56,15 @@ export const ImprovedPage = ({ generateManuscript }) => {
     setLoading(true);
     setCopySuccess('');
     
+    const imageCount = imageCountInput.current.value 
+      ? parseInt(imageCountInput.current.value) 
+      : IMAGE_COUNT;
+    
     try {
       const result = await generateManuscript({
         type: 'next',
         keyword: keywordInput.current.value,
+        imageCount: imageCount,
         feedback: feedbackInput.current.value,
         previousManuscripts: manuscripts
       });
@@ -125,7 +137,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
       <div className="max-w-7xl mx-auto p-6">
         {/* 입력 영역 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 메인 키워드
@@ -136,6 +148,21 @@ export const ImprovedPage = ({ generateManuscript }) => {
                 placeholder="예: 갈비 창업 브랜드"
                 className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                이미지 개수 (기본값: {IMAGE_COUNT})
+              </label>
+              <input
+                type="number"
+                ref={imageCountInput}
+                placeholder={IMAGE_COUNT.toString()}
+                min="1"
+                className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                💡 입력하지 않으면 기본값({IMAGE_COUNT}개)이 사용됩니다.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

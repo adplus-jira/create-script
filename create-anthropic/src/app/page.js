@@ -23,6 +23,7 @@ export default function Home() {
           marketName: constants.MARKET_NAME,
           keywordCount: constants.KEYWORD_COUNT,
           minLength: constants.MIN_LENGTH,
+          maxLength: constants.MAX_LENGTH,
           imageCount: constants.IMAGE_COUNT,
           contentType: constants.CONTENT_TYPE,
           transformedContent: transformedContent,

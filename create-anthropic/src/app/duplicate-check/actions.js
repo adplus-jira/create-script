@@ -11,8 +11,8 @@ function extractSentences(content, excludeStrings = []) {
       // 빈 줄 제외
       if (line.length === 0) return false;
       
-      // 숫자만 있는 줄 제외 (예: "1", "20", "100" 등)
-      if (/^\d+$/.test(line)) return false;
+      // 숫자만 있는 줄 제외 (예: "1", "20", "100", "1 2 3" 등)
+      if (/^[\d\s]+$/.test(line)) return false;
       
       // 사용자 정의 제외 문자열 확인
       if (excludeStrings.some(exclude => line === exclude || line.includes(exclude))) {

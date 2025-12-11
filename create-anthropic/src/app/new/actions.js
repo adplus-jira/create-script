@@ -28,7 +28,7 @@ const extractLines = (manuscripts) => {
 };
 
 // 공통 원고 생성 로직
-async function generateManuscriptInternal({ keyword, previousManuscripts, feedback, isFirst }) {
+async function generateManuscriptInternal({ keyword, previousManuscripts, feedback, isFirst, imageCount }) {
   // 이전 원고에서 중복 표현 추출
   const previousLines = previousManuscripts.length > 0 
     ? extractLines(previousManuscripts).slice(0, 100)
@@ -45,13 +45,17 @@ ${previousLines.slice(0, 50).join('\n')}
   // 세션 초기화
   await initChatSession(customSystemPrompt);
 
+  // imageCount가 없으면 기본값 사용
+  const finalImageCount = imageCount || constants.IMAGE_COUNT;
+
   // 프롬프트 생성
   let combinedPrompt = getUserPrompt({
     mainKeyword: keyword,
     marketName: constants.MARKET_NAME,
     keywordCount: constants.KEYWORD_COUNT,
     minLength: constants.MIN_LENGTH,
-    imageCount: constants.IMAGE_COUNT,
+    maxLength: constants.MAX_LENGTH,
+    imageCount: finalImageCount,
     contentType: constants.CONTENT_TYPE,
     transformedContent: cachedTransformedContent,
     additionalRequirements: constants.ADDITIONAL_REQUIREMENTS,
@@ -82,7 +86,7 @@ ${previousLines.slice(0, 50).join('\n')}
 }
 
 // 원고 생성 (하나씩)
-export async function generateManuscript({ type, keyword, feedback, previousManuscripts = [] }) {
+export async function generateManuscript({ type, keyword, feedback, previousManuscripts = [], imageCount }) {
   try {
     // transformedContent 캐싱 (키워드가 바뀔 때만 다시 변환)
     if (!cachedTransformedContent || cacheKeyword !== keyword) {
@@ -100,7 +104,8 @@ export async function generateManuscript({ type, keyword, feedback, previousManu
         keyword,
         previousManuscripts,
         feedback,
-        isFirst: true
+        isFirst: true,
+        imageCount
       });
       return { content: response, status: 'success' };
     }
@@ -111,7 +116,8 @@ export async function generateManuscript({ type, keyword, feedback, previousManu
         keyword,
         previousManuscripts,
         feedback,
-        isFirst: false
+        isFirst: false,
+        imageCount
       });
       return { content: response, status: 'success' };
     }
