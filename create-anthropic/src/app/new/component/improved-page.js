@@ -7,10 +7,20 @@ export const ImprovedPage = ({ generateManuscript }) => {
   const [manuscripts, setManuscripts] = React.useState([]);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [copySuccess, setCopySuccess] = React.useState('');
+  const [targetCount, setTargetCount] = React.useState(1);
+  const [autoGenerate, setAutoGenerate] = React.useState(false);
+  const [keepFeedback, setKeepFeedback] = React.useState(false);
   
   const keywordInput = React.useRef(null);
   const feedbackInput = React.useRef(null);
   const imageCountInput = React.useRef(null);
+  const cancelRef = React.useRef(false);
+
+  const clampCount = (value) => {
+    const n = Number.isFinite(value) ? value : parseInt(value, 10);
+    if (!Number.isFinite(n)) return 1;
+    return Math.min(20, Math.max(1, n));
+  };
 
   const handleStart = async () => {
     if (!keywordInput.current.value) {
@@ -20,15 +30,20 @@ export const ImprovedPage = ({ generateManuscript }) => {
 
     setLoading(true);
     setCopySuccess('');
+    cancelRef.current = false;
     
     const imageCount = imageCountInput.current.value 
       ? parseInt(imageCountInput.current.value) 
       : IMAGE_COUNT;
+
+    const keyword = keywordInput.current.value;
+    const feedbackSnapshot = feedbackInput.current.value;
+    const finalTargetCount = clampCount(targetCount);
     
     try {
       const result = await generateManuscript({
         type: 'init',
-        keyword: keywordInput.current.value,
+        keyword,
         imageCount: imageCount,
         previousManuscripts: manuscripts
       });
@@ -36,9 +51,34 @@ export const ImprovedPage = ({ generateManuscript }) => {
       if (result.status === 'error') {
         alert('오류: ' + result.content);
       } else {
-        setManuscripts([result.content]);
+        let nextManuscripts = [result.content];
+        setManuscripts(nextManuscripts);
         setSelectedIndex(0);
-        feedbackInput.current.value = '';
+        if (!keepFeedback) feedbackInput.current.value = '';
+
+        // 자동 생성: 목표 개수까지 next를 반복 실행
+        if (autoGenerate && finalTargetCount > 1) {
+          for (let i = 1; i < finalTargetCount; i += 1) {
+            if (cancelRef.current) break;
+            const nextResult = await generateManuscript({
+              type: 'next',
+              keyword,
+              imageCount: imageCount,
+              feedback: keepFeedback ? feedbackSnapshot : '',
+              previousManuscripts: nextManuscripts,
+            });
+
+            if (nextResult.status === 'error') {
+              alert('오류: ' + nextResult.content);
+              break;
+            }
+
+            nextManuscripts = [...nextManuscripts, nextResult.content];
+            setManuscripts(nextManuscripts);
+            setSelectedIndex(nextManuscripts.length - 1);
+            if (!keepFeedback) feedbackInput.current.value = '';
+          }
+        }
       }
     } catch (error) {
       alert('생성 중 오류가 발생했습니다: ' + error.message);
@@ -55,6 +95,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
 
     setLoading(true);
     setCopySuccess('');
+    cancelRef.current = false;
     
     const imageCount = imageCountInput.current.value 
       ? parseInt(imageCountInput.current.value) 
@@ -74,7 +115,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
       } else {
         setManuscripts([...manuscripts, result.content]);
         setSelectedIndex(manuscripts.length);
-        feedbackInput.current.value = '';
+        if (!keepFeedback) feedbackInput.current.value = '';
       }
     } catch (error) {
       alert('생성 중 오류가 발생했습니다: ' + error.message);
@@ -115,12 +156,19 @@ export const ImprovedPage = ({ generateManuscript }) => {
 
   const clearAll = () => {
     if (confirm('모든 원고를 삭제하시겠습니까?')) {
+      cancelRef.current = true;
       setManuscripts([]);
       setSelectedIndex(0);
       setCopySuccess('');
       feedbackInput.current.value = '';
     }
   };
+
+  const finalTargetCount = clampCount(targetCount);
+  const showProgress = autoGenerate && finalTargetCount > 1 && manuscripts.length > 0;
+  const progressPct = showProgress
+    ? Math.min(100, Math.round((manuscripts.length / finalTargetCount) * 100))
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -130,89 +178,181 @@ export const ImprovedPage = ({ generateManuscript }) => {
             <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
             <div className="text-lg font-semibold text-gray-700">원고 생성 중...</div>
             <div className="text-sm text-gray-500 mt-2">잠시만 기다려주세요.</div>
+            <button
+              onClick={() => {
+                cancelRef.current = true;
+              }}
+              className="mt-4 w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors font-semibold"
+            >
+              ⏹️ 중단
+            </button>
           </div>
         </div>
       )}
 
       <div className="max-w-7xl mx-auto p-6">
         {/* 입력 영역 */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
+          <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                메인 키워드
-              </label>
-              <input
-                type="text"
-                ref={keywordInput}
-                placeholder="예: 갈비 창업 브랜드"
-                className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none"
-              />
+              <h2 className="text-lg font-bold text-gray-800">원고 생성 설정</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                기본 입력을 채운 뒤, 필요하면 자동 생성으로 N개를 한 번에 채울 수 있어요.
+              </p>
             </div>
-            <div>
+            {showProgress && (
+              <div className="min-w-[180px]">
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span className="font-medium">진행률</span>
+                  <span className="font-semibold text-blue-700">
+                    {manuscripts.length}/{finalTargetCount} ({progressPct}%)
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-2 bg-blue-500 rounded-full transition-all"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* 기본 입력 */}
+            <div className="lg:col-span-2 bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-semibold text-gray-800">기본 입력</div>
+                <div className="text-xs text-gray-500">필수: 메인 키워드</div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    메인 키워드
+                  </label>
+                  <input
+                    type="text"
+                    ref={keywordInput}
+                    placeholder="예: 갈비 창업 브랜드"
+                    className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    이미지 개수
+                    <span className="text-xs text-gray-500 font-normal"> (기본 {IMAGE_COUNT})</span>
+                  </label>
+                  <input
+                    type="number"
+                    ref={imageCountInput}
+                    placeholder={IMAGE_COUNT.toString()}
+                    min="1"
+                    className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none bg-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    미입력 시 기본값을 사용합니다.
+                  </p>
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    피드백 (선택)
+                  </label>
+                  <input
+                    type="text"
+                    ref={feedbackInput}
+                    placeholder="예: 더 친근한 말투로, 사례를 더 강조해줘"
+                    className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none bg-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    다음 원고 생성 시 반영할 요청사항을 입력하세요.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 자동/반복 설정 */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="text-sm font-semibold text-gray-800 mb-3">자동·반복 설정</div>
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                이미지 개수 (기본값: {IMAGE_COUNT})
+                만들어야 하는 원고 개수 (1~20)
               </label>
               <input
                 type="number"
-                ref={imageCountInput}
-                placeholder={IMAGE_COUNT.toString()}
-                min="1"
-                className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none"
+                value={finalTargetCount}
+                min={1}
+                max={20}
+                onChange={(e) => setTargetCount(clampCount(e.target.value))}
+                className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                💡 입력하지 않으면 기본값({IMAGE_COUNT}개)이 사용됩니다.
+              <p className="text-xs text-gray-500 mt-1 mb-3">
+                자동 생성 ON이면, 시작 후 목표 개수까지 자동으로 생성합니다.
               </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                피드백 (선택사항)
-              </label>
-              <input
-                type="text"
-                ref={feedbackInput}
-                placeholder="예: 더 친근한 말투로, 사례를 더 강조해줘"
-                className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-blue-500 focus:outline-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                💡 다음 원고에 반영할 내용을 입력하세요.
-              </p>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 text-sm font-medium text-gray-700 select-none bg-white border border-gray-200 rounded-md px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={autoGenerate}
+                    onChange={(e) => setAutoGenerate(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <span>자동으로 다음 원고 생성 (N개 채우기)</span>
+                </label>
+                <label className="flex items-center gap-3 text-sm font-medium text-gray-700 select-none bg-white border border-gray-200 rounded-md px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={keepFeedback}
+                    onChange={(e) => setKeepFeedback(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <span>피드백 입력값을 반복 사용(유지)</span>
+                </label>
+              </div>
+
+              <div className="mt-4 text-xs text-gray-500">
+                팁: 자동 생성 중에는 로딩창에서 <span className="font-semibold">중단</span>할 수 있어요.
+              </div>
             </div>
           </div>
           
-          <div className="flex gap-3">
+          <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleStart}
               disabled={loading}
-              className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
+              className="sm:flex-1 bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
             >
-              🚀 시작 (새 세션)
+              🚀 시작{autoGenerate && finalTargetCount > 1 ? ` (자동 ${finalTargetCount}개)` : ''}
             </button>
             <button
               onClick={handleNext}
               disabled={loading || manuscripts.length === 0}
-              className="flex-1 bg-green-500 text-white px-6 py-3 rounded-md hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
+              className="sm:flex-1 bg-green-500 text-white px-6 py-3 rounded-md hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
             >
               ➡️ 다음 원고 생성
             </button>
             <button
               onClick={clearAll}
               disabled={loading || manuscripts.length === 0}
-              className="bg-red-500 text-white px-6 py-3 rounded-md hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
+              className="sm:w-auto bg-red-500 text-white px-6 py-3 rounded-md hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
             >
               🗑️ 전체 삭제
             </button>
           </div>
 
           {manuscripts.length > 0 && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-md">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-blue-800 font-medium">
+            <div className="mt-4 p-4 bg-blue-50 rounded-md border border-blue-100">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                <span className="text-sm text-blue-900 font-medium">
                   총 {manuscripts.length}개의 원고가 생성되었습니다.
+                  {autoGenerate && finalTargetCount > 1 ? ` (진행: ${manuscripts.length}/${finalTargetCount})` : ''}
                 </span>
                 <button
                   onClick={downloadAllManuscripts}
-                  className="text-sm bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                  className="text-sm bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-semibold"
                 >
                   📥 전체 다운로드
                 </button>
