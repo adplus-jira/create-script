@@ -1,7 +1,7 @@
 import { ImprovedPage } from './component/improved-page';
 import { generateManuscript } from './actions';
 
-export default function NewImprovedPage() {
+export default function DamgaPage() {
   return (
     <div className="relative bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto p-6">
@@ -18,4 +18,3 @@ export default function NewImprovedPage() {
     </div>
   );
 }
-

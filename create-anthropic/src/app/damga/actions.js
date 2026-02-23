@@ -1,7 +1,9 @@
 'use server';
 
 import { transformKeyContent } from '../lib/content-transformer';
-import { SYSTEM_PROMPT, getUserPrompt, NEXT_USER_PROMPT, CHECK_PROMPT } from './lib/improved-prompts';
+import { SYSTEM_PROMPT } from './lib/system-prompt';
+import { getUserPrompt, NEXT_USER_PROMPT } from './lib/user-prompts';
+import { CHECK_PROMPT } from './lib/check-prompt';
 import * as constants from '../lib/constants';
 import { initChatSession, sendChatMessage } from '../lib/chat-session';
 
@@ -30,10 +32,10 @@ const extractLines = (manuscripts) => {
 // 공통 원고 생성 로직
 async function generateManuscriptInternal({ keyword, previousManuscripts, feedback, isFirst, imageCount }) {
   // 이전 원고에서 중복 표현 추출
-  const previousLines = previousManuscripts.length > 0 
+  const previousLines = previousManuscripts.length > 0
     ? extractLines(previousManuscripts).slice(0, 100)
     : [];
-  
+
   // System Prompt에 중복 방지 정보 추가
   const customSystemPrompt = SYSTEM_PROMPT + (previousLines.length > 0 ? `
 
@@ -76,12 +78,12 @@ ${previousLines.slice(0, 50).join('\n')}
 
   // 한 번의 API 호출로 원고 생성 및 검토
   const response = await sendChatMessage(combinedPrompt);
-  
+
   // 특수문자 제거 및 줄바꿈 표시 메타데이터 제거
   let cleaned = response.replace(/['"`**'']/g, '');
   // " <- (...)" 형태의 줄바꿈 메타데이터 제거
   cleaned = cleaned.replace(/<-\s*\([^)]*\)/g, '');
-  
+
   return cleaned;
 }
 
@@ -125,15 +127,14 @@ export async function generateManuscript({ type, keyword, feedback, previousManu
     return { content: 'Invalid type', status: 'error' };
   } catch (error) {
     console.error('원고 생성 오류:', error);
-    
+
     let errorMessage = error.message;
     if (error.message?.includes('INTERNAL')) {
       errorMessage = 'Google AI API 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
     } else if (error.message?.includes('API_KEY')) {
       errorMessage = 'API 키가 올바르지 않습니다. .env 파일의 GEMINI_API_KEY를 확인해주세요.';
     }
-    
+
     return { content: errorMessage, status: 'error' };
   }
 }
-

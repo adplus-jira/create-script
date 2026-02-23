@@ -10,7 +10,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
   const [targetCount, setTargetCount] = React.useState(1);
   const [autoGenerate, setAutoGenerate] = React.useState(false);
   const [keepFeedback, setKeepFeedback] = React.useState(false);
-  
+
   const keywordInput = React.useRef(null);
   const feedbackInput = React.useRef(null);
   const imageCountInput = React.useRef(null);
@@ -31,15 +31,15 @@ export const ImprovedPage = ({ generateManuscript }) => {
     setLoading(true);
     setCopySuccess('');
     cancelRef.current = false;
-    
-    const imageCount = imageCountInput.current.value 
-      ? parseInt(imageCountInput.current.value) 
+
+    const imageCount = imageCountInput.current.value
+      ? parseInt(imageCountInput.current.value)
       : IMAGE_COUNT;
 
     const keyword = keywordInput.current.value;
     const feedbackSnapshot = feedbackInput.current.value;
     const finalTargetCount = clampCount(targetCount);
-    
+
     try {
       const result = await generateManuscript({
         type: 'init',
@@ -47,7 +47,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
         imageCount: imageCount,
         previousManuscripts: manuscripts
       });
-      
+
       if (result.status === 'error') {
         alert('오류: ' + result.content);
       } else {
@@ -96,11 +96,11 @@ export const ImprovedPage = ({ generateManuscript }) => {
     setLoading(true);
     setCopySuccess('');
     cancelRef.current = false;
-    
-    const imageCount = imageCountInput.current.value 
-      ? parseInt(imageCountInput.current.value) 
+
+    const imageCount = imageCountInput.current.value
+      ? parseInt(imageCountInput.current.value)
       : IMAGE_COUNT;
-    
+
     try {
       const result = await generateManuscript({
         type: 'next',
@@ -109,7 +109,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
         feedback: feedbackInput.current.value,
         previousManuscripts: manuscripts
       });
-      
+
       if (result.status === 'error') {
         alert('오류: ' + result.content);
       } else {
@@ -191,7 +191,6 @@ export const ImprovedPage = ({ generateManuscript }) => {
       )}
 
       <div className="max-w-7xl mx-auto p-6">
-        {/* 입력 영역 */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
@@ -219,7 +218,6 @@ export const ImprovedPage = ({ generateManuscript }) => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* 기본 입력 */}
             <div className="lg:col-span-2 bg-gray-50 rounded-lg p-4 border border-gray-200">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm font-semibold text-gray-800">기본 입력</div>
@@ -273,7 +271,6 @@ export const ImprovedPage = ({ generateManuscript }) => {
               </div>
             </div>
 
-            {/* 자동/반복 설정 */}
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <div className="text-sm font-semibold text-gray-800 mb-3">자동·반복 설정</div>
 
@@ -318,7 +315,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleStart}
@@ -361,7 +358,6 @@ export const ImprovedPage = ({ generateManuscript }) => {
           )}
         </div>
 
-        {/* 원고 목록 */}
         {manuscripts.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800">생성된 원고 목록</h2>
@@ -386,7 +382,6 @@ export const ImprovedPage = ({ generateManuscript }) => {
           </div>
         )}
 
-        {/* 원고 미리보기 */}
         {manuscripts.length > 0 && manuscripts[selectedIndex] && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
@@ -427,7 +422,6 @@ export const ImprovedPage = ({ generateManuscript }) => {
           </div>
         )}
 
-        {/* 안내 메시지 */}
         {manuscripts.length === 0 && !loading && (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <div className="text-6xl mb-4">📝</div>
@@ -435,9 +429,9 @@ export const ImprovedPage = ({ generateManuscript }) => {
               원고 생성을 시작하세요
             </h3>
             <p className="text-gray-600 mb-6">
-              키워드를 입력한 후 "시작" 버튼을 클릭하세요.
+              키워드를 입력한 후 &quot;시작&quot; 버튼을 클릭하세요.
             </p>
-            
+
             <div className="mt-6 text-left max-w-2xl mx-auto space-y-4">
               <div className="bg-blue-50 p-4 rounded-md">
                 <h4 className="font-bold text-blue-900 mb-2">✨ 주요 기능</h4>
@@ -446,20 +440,20 @@ export const ImprovedPage = ({ generateManuscript }) => {
                   <li>• <strong>다음 원고 생성</strong>: 이전 원고와 겹치지 않게 추가 생성</li>
                   <li>• <strong>피드백</strong>: 원하는 스타일이나 내용 요청</li>
                   <li>• <strong>클립보드 복사</strong>: 원고를 바로 복사하여 사용</li>
-                  <li>• <strong>특수문자 자동 제거</strong>: ', ", **, ` 자동 제거</li>
+                  <li>• <strong>특수문자 자동 제거</strong>: &apos;, &quot;, **, ` 자동 제거</li>
                 </ul>
               </div>
-              
+
               <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
                 <h4 className="font-bold text-yellow-900 mb-2">💡 사용 팁</h4>
                 <ul className="text-sm text-yellow-800 space-y-1">
-                  <li>• 첫 원고를 보고 마음에 들면 "다음" 버튼으로 계속 생성</li>
+                  <li>• 첫 원고를 보고 마음에 들면 &quot;다음&quot; 버튼으로 계속 생성</li>
                   <li>• 피드백 입력으로 원하는 방향으로 조정 가능</li>
                   <li>• 이전 원고들과 자동으로 비교하여 중복 표현 제거</li>
                   <li>• 필요한 만큼 계속 생성 가능 (10개, 20개 등)</li>
                 </ul>
               </div>
-              
+
               <div className="bg-green-50 p-4 rounded-md border border-green-200">
                 <h4 className="font-bold text-green-900 mb-2">🎯 개선된 점</h4>
                 <ul className="text-sm text-green-800 space-y-1">
@@ -476,4 +470,3 @@ export const ImprovedPage = ({ generateManuscript }) => {
     </div>
   );
 };
-

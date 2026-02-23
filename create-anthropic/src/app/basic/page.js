@@ -77,7 +77,6 @@ async function BasicPage() {
 
   return (
     <div className="p-10 relative">
-      <h1 className="text-3xl font-bold underline mb-8">수기 프롬프트 원고 제작 (원고 개수 입력 생성)</h1>
       <ManualPage getMessage={getMessage} />
     </div>
   );

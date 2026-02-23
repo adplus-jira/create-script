@@ -247,7 +247,7 @@ function applyReplacements(files, duplicates, replacements) {
       }
     });
 
-    // 특수문자 제거 (new/actions.js와 동일한 필터)
+    // 특수문자 제거 (damga/actions.js와 동일한 필터)
     let cleanedContent = modifiedContent.replace(/['"`**'']/g, '');
     // " <- (...)" 형태의 줄바꿈 메타데이터 제거
     cleanedContent = cleanedContent.replace(/<-\s*\([^)]*\)/g, '');
