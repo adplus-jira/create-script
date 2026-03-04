@@ -10,7 +10,7 @@ export const transformKeyContent = async (
   })
   try {
     const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-flash-lite-preview',
       config: {
         systemInstruction: TRANSFORM_SYSTEM_PROMPT,
         temperature: 1,

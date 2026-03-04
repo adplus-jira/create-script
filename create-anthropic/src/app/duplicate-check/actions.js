@@ -319,7 +319,7 @@ export async function applyTransforms({ files, excludeStrings = [] }) {
     });
 
     const chat = ai.chats.create({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite-preview",
       config: {
         systemInstruction: DUPLICATE_CHECK_SYSTEM_PROMPT,
         temperature: 1,

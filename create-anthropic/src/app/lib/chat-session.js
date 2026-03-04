@@ -9,7 +9,7 @@ export const initChatSession = async (systemPrompt) => {
   });
 
   chat = ai.chats.create({
-    model: "gemini-2.5-flash",
+    model: "gemini-3.1-flash-lite-preview",
     config: {
       systemInstruction: systemPrompt || SYSTEM_PROMPT,
       temperature: 1,
