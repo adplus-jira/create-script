@@ -3,6 +3,15 @@
 import { GoogleGenAI } from "@google/genai";
 import { DUPLICATE_CHECK_SYSTEM_PROMPT, getDuplicateCheckUserPrompt } from './lib/prompt';
 
+function extractTextFromGeminiResponse(response) {
+  const parts = response?.candidates?.flatMap(candidate => candidate?.content?.parts || []) || [];
+  const textParts = parts
+    .map(part => part?.text)
+    .filter(text => typeof text === "string" && text.length > 0);
+
+  return textParts.join("");
+}
+
 // 파일에서 문장 추출 (엔터 기준)
 function extractSentences(content, excludeStrings = []) {
   return content.split('\n')
@@ -323,6 +332,9 @@ export async function applyTransforms({ files, excludeStrings = [] }) {
       config: {
         systemInstruction: DUPLICATE_CHECK_SYSTEM_PROMPT,
         temperature: 1,
+        thinkingConfig: {
+          thinkingLevel: "high",
+        }
       },
     });
 
@@ -346,7 +358,7 @@ export async function applyTransforms({ files, excludeStrings = [] }) {
       message: userPrompt
     });
 
-    const responseText = response.text;
+    const responseText = extractTextFromGeminiResponse(response);
     console.log('[중복 검사] Gemini 응답 수신 완료');
     console.log(responseText);
 

@@ -3,6 +3,15 @@ import { SYSTEM_PROMPT } from "./prompts";
 
 let chat = null;
 
+function extractTextFromGeminiResponse(response) {
+  const parts = response?.candidates?.flatMap(candidate => candidate?.content?.parts || []) || [];
+  const textParts = parts
+    .map(part => part?.text)
+    .filter(text => typeof text === "string" && text.length > 0);
+
+  return textParts.join("");
+}
+
 export const initChatSession = async (systemPrompt) => {
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
@@ -13,6 +22,9 @@ export const initChatSession = async (systemPrompt) => {
     config: {
       systemInstruction: systemPrompt || SYSTEM_PROMPT,
       temperature: 1,
+      thinkingConfig: {
+        thinkingLevel: "high",
+      }
     },
   });
 
@@ -26,5 +38,5 @@ export const sendChatMessage = async (message) => {
     message
   });
 
-  return res.text;
+  return extractTextFromGeminiResponse(res);
 }
