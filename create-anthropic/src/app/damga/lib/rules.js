@@ -27,11 +27,6 @@ export const CONTENT_STRUCTURE_EXAMPLES = `
    - 또는: 세미나 → 특징 → 성공사례 → 마무리
    - 단락 15에 들어갈 내용이 단락 3~4에 올 수도 있음`;
 
-export const TITLE_EXAMPLES = `
-   1. 김해 소고기 맛집 가성비 좋은 고기집 담가화로구이
-   2. 브랜드 창업 준비 초보 창업자도 가능한 프랜차이즈 담가화로구이
-   3. 요식업 업종변경 창업 드라마 속 브랜드 담가화로구이`;
-
 export const LINE_BREAK_EXAMPLES = `
   여러분도 저처럼 창업에 대한
   꿈을 가지고 계시다면

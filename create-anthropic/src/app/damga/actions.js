@@ -11,6 +11,83 @@ import { initChatSession, sendChatMessage } from '../lib/chat-session';
 let cachedTransformedContent = null;
 let cacheKeyword = null;
 
+const clampImageCount = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return constants.IMAGE_COUNT;
+  return Math.min(20, Math.max(1, Math.floor(parsed)));
+};
+
+const cleanGeneratedText = (text) => {
+  if (!text) return '';
+  let cleaned = text.replace(/['"`**'']/g, '');
+  // " <- (...)" 형태의 줄바꿈 메타데이터 제거
+  cleaned = cleaned.replace(/<-\s*\([^)]*\)/g, '');
+  return cleaned;
+};
+
+const countSequentialParagraphs = (content) => {
+  const numberedLineRegex = /^\s*(\d{1,2})(?:\s*[.)]|\s+|$)/;
+  const foundNumbers = new Set();
+
+  content.split('\n').forEach((line) => {
+    const match = line.match(numberedLineRegex);
+    if (!match) return;
+
+    const number = Number(match[1]);
+    if (number >= 1 && number <= 99) {
+      foundNumbers.add(number);
+    }
+  });
+
+  let sequentialCount = 0;
+  for (let i = 1; i <= 99; i += 1) {
+    if (!foundNumbers.has(i)) break;
+    sequentialCount = i;
+  }
+
+  return sequentialCount;
+};
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const countKeywordOccurrences = (content, keyword) => {
+  if (!content || !keyword) return 0;
+  const escaped = escapeRegExp(keyword.trim());
+  if (!escaped) return 0;
+  const regex = new RegExp(escaped, 'g');
+  const matches = content.match(regex);
+  return matches ? matches.length : 0;
+};
+
+const buildParagraphCorrectionPrompt = ({ draft, expectedCount, actualCount }) => `
+방금 작성한 원고를 아래 규칙으로 다시 정리해주세요.
+
+<핵심 수정사항>
+- 단락 번호가 현재 ${actualCount}개로 부족하거나 형식이 맞지 않습니다.
+- 단락 번호는 반드시 1부터 ${expectedCount}까지 연속으로 정확히 작성하세요.
+- 누락된 단락은 새로 추가하고, 기존 단락도 필요하면 재배치하세요.
+- 최종 결과는 "완성된 원고 전체"만 출력하세요.
+- 설명, 해설, 체크리스트, JSON, 코드블록은 절대 출력하지 마세요.
+
+<재작성 대상 원고>
+${draft}
+`;
+
+const buildKeywordCorrectionPrompt = ({ draft, keyword, expectedCount, actualCount }) => `
+방금 작성한 원고를 아래 규칙에 맞게 다시 작성해주세요.
+
+<핵심 수정사항>
+- 메인 키워드 "${keyword}" 사용 횟수가 현재 ${actualCount}회로 부족합니다.
+- 제목 1회 + 본문 ${Math.max(0, expectedCount - 1)}회, 총 ${expectedCount}회를 정확히 맞춰주세요.
+- 메인 키워드는 띄어쓰기/철자를 절대 바꾸지 말고 "${keyword}" 그대로 사용하세요.
+- 단순 나열이 아니라 문맥이 자연스럽게 이어지도록 전체 원고를 다듬어주세요.
+- 최종 결과는 "완성된 원고 전체"만 출력하세요.
+- 설명, 해설, 체크리스트, JSON, 코드블록은 절대 출력하지 마세요.
+
+<재작성 대상 원고>
+${draft}
+`;
+
 // 원고에서 라인 추출 (중복 검사용)
 const extractLines = (manuscripts) => {
   const allLines = new Set();
@@ -48,7 +125,7 @@ ${previousLines.slice(0, 50).join('\n')}
   await initChatSession(customSystemPrompt);
 
   // imageCount가 없으면 기본값 사용
-  const finalImageCount = imageCount || constants.IMAGE_COUNT;
+  const finalImageCount = clampImageCount(imageCount);
 
   // 프롬프트 생성
   let combinedPrompt = getUserPrompt({
@@ -79,10 +156,39 @@ ${previousLines.slice(0, 50).join('\n')}
   // 한 번의 API 호출로 원고 생성 및 검토
   const response = await sendChatMessage(combinedPrompt);
 
-  // 특수문자 제거 및 줄바꿈 표시 메타데이터 제거
-  let cleaned = response.replace(/['"`**'']/g, '');
-  // " <- (...)" 형태의 줄바꿈 메타데이터 제거
-  cleaned = cleaned.replace(/<-\s*\([^)]*\)/g, '');
+  // 특수문자, 메타데이터 정리
+  let cleaned = cleanGeneratedText(response);
+  let paragraphCount = countSequentialParagraphs(cleaned);
+  let keywordCount = countKeywordOccurrences(cleaned, keyword);
+
+  // 모델이 요구 단락 수를 못 맞추는 경우 자동 보정 (최대 2회)
+  const maxCorrectionRetries = 2;
+  for (let attempt = 0; attempt < maxCorrectionRetries && paragraphCount !== finalImageCount; attempt += 1) {
+    const correctionPrompt = buildParagraphCorrectionPrompt({
+      draft: cleaned,
+      expectedCount: finalImageCount,
+      actualCount: paragraphCount,
+    });
+    const corrected = await sendChatMessage(correctionPrompt);
+    cleaned = cleanGeneratedText(corrected);
+    paragraphCount = countSequentialParagraphs(cleaned);
+    keywordCount = countKeywordOccurrences(cleaned, keyword);
+  }
+
+  // 모델이 메인 키워드 사용 횟수를 못 맞추는 경우 자동 보정 (최대 2회)
+  const expectedKeywordCount = constants.KEYWORD_COUNT;
+  for (let attempt = 0; attempt < maxCorrectionRetries && keywordCount < expectedKeywordCount; attempt += 1) {
+    const keywordCorrectionPrompt = buildKeywordCorrectionPrompt({
+      draft: cleaned,
+      keyword,
+      expectedCount: expectedKeywordCount,
+      actualCount: keywordCount,
+    });
+    const corrected = await sendChatMessage(keywordCorrectionPrompt);
+    cleaned = cleanGeneratedText(corrected);
+    paragraphCount = countSequentialParagraphs(cleaned);
+    keywordCount = countKeywordOccurrences(cleaned, keyword);
+  }
 
   return cleaned;
 }

@@ -45,6 +45,7 @@ export const ImprovedPage = ({ generateManuscript }) => {
         type: 'init',
         keyword,
         imageCount: imageCount,
+        feedback: feedbackSnapshot,
         previousManuscripts: manuscripts
       });
 
